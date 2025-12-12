@@ -31,7 +31,7 @@ public static class UpdateService
     /// <summary>
     /// Current app version
     /// </summary>
-    public static string CurrentVersion => "1.0.0";
+    public static string CurrentVersion => "1.0.1";
     
     /// <summary>
     /// Information about an available update

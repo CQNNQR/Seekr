@@ -11,7 +11,7 @@
         x:Class="Seekr.Avalonia.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/seekr-icon.ico"
-        Title="Seekr v1.0.0 - Disk Usage Analyzer">
+        Title="Seekr v1.0.1 - Disk Usage Analyzer">
 
     <Window.Resources>
         <converters:SizeConverter x:Key="SizeConverter"/>
@@ -282,7 +282,7 @@
         <Border Grid.Row="3" Background="#007ACC" Padding="5">
             <Grid ColumnDefinitions="*,Auto,Auto">
                 <TextBlock Grid.Column="0" Text="{Binding StatusMessage}" Foreground="White" VerticalAlignment="Center" FontWeight="SemiBold"/>
-                <TextBlock Grid.Column="1" Text="v1.0.0 © 2025 CQNNQR" Foreground="#AACCFF" VerticalAlignment="Center" FontSize="11" Margin="10,0"/>
+                <TextBlock Grid.Column="1" Text="v1.0.1 © 2025 CQNNQR" Foreground="#AACCFF" VerticalAlignment="Center" FontSize="11" Margin="10,0"/>
                 <ProgressBar Grid.Column="2" IsIndeterminate="True" IsVisible="{Binding IsScanning}" Width="150" Height="10" Background="#005A9E" Foreground="White"/>
             </Grid>
         </Border>

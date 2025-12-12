@@ -1,3 +1,16 @@
+# Seekr v1.0.1 - Update Test 🧪
+
+**Release Date:** December 12, 2025
+
+Testing the in-app update feature!
+
+## 🔧 Changes
+
+- Test release to verify auto-update functionality
+- No functional changes from v1.0.0
+
+---
+
 # Seekr v1.0.0 - Initial Release 🎉
 
 **Release Date:** December 12, 2025
