@@ -1,0 +1,32 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:Seekr.Avalonia.ViewModels"
+        xmlns:converters="using:Seekr.Avalonia.Converters"
+        mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="400"
+        x:Class="Seekr.Avalonia.DetailsWindow"
+        x:DataType="vm:DetailsWindowViewModel"
+        Title="{Binding Title}"
+        Width="600" Height="400"
+        WindowStartupLocation="CenterOwner">
+
+    <Window.Resources>
+        <converters:SizeConverter x:Key="SizeConverter"/>
+    </Window.Resources>
+
+    <Grid RowDefinitions="Auto, *">
+        <Border Grid.Row="0" Background="{DynamicResource ToolbarBackground}" Padding="10">
+            <TextBlock Text="{Binding Title}" FontWeight="Bold" FontSize="16" Foreground="{DynamicResource TextForeground}"/>
+        </Border>
+
+        <DataGrid Grid.Row="1" ItemsSource="{Binding Items}" AutoGenerateColumns="False" IsReadOnly="True" GridLinesVisibility="All" BorderThickness="0">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="250"/>
+                <DataGridTextColumn Header="Size" Binding="{Binding TotalSize, Converter={StaticResource SizeConverter}}" Width="100"/>
+                <DataGridTextColumn Header="Type" Binding="{Binding IsDirectory, Converter={x:Static ObjectConverters.IsNull}}" Width="80"/> 
+                <!-- Simple type column, maybe improve later -->
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</Window>

@@ -1,0 +1,123 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:Seekr.Avalonia.ViewModels"
+        mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="600"
+        Width="500" Height="620"
+        x:Class="Seekr.Avalonia.SettingsWindow"
+        x:DataType="vm:SettingsWindowViewModel"
+        Title="Settings"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False">
+
+    <ScrollViewer>
+        <StackPanel Margin="24" Spacing="20">
+            <TextBlock Text="Settings" FontSize="24" FontWeight="Bold"/>
+
+            <!-- Appearance Section -->
+            <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" 
+                    BorderThickness="0,0,0,1" Padding="0,0,0,16">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Appearance" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource SystemAccentColor}"/>
+                    
+                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" Margin="0,4,0,0">
+                        <StackPanel Grid.Column="0" Grid.Row="0" Spacing="6" Margin="0,0,12,12">
+                            <TextBlock Text="Theme"/>
+                            <ComboBox SelectedIndex="{Binding SelectedThemeIndex}" HorizontalAlignment="Stretch">
+                                <ComboBoxItem>Light</ComboBoxItem>
+                                <ComboBoxItem>Dark</ComboBoxItem>
+                            </ComboBox>
+                        </StackPanel>
+                        
+                        <StackPanel Grid.Column="1" Grid.Row="0" Spacing="6" Margin="12,0,0,12">
+                            <TextBlock Text="Size Unit"/>
+                            <ComboBox SelectedIndex="{Binding SelectedUnitIndex}" HorizontalAlignment="Stretch">
+                                <ComboBoxItem>Auto</ComboBoxItem>
+                                <ComboBoxItem>Bytes</ComboBoxItem>
+                                <ComboBoxItem>KB</ComboBoxItem>
+                                <ComboBoxItem>MB</ComboBoxItem>
+                                <ComboBoxItem>GB</ComboBoxItem>
+                            </ComboBox>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Chart Settings Section -->
+            <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" 
+                    BorderThickness="0,0,0,1" Padding="0,0,0,16">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Chart Settings" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource SystemAccentColor}"/>
+                    
+                    <StackPanel Spacing="6" Margin="0,4,0,0">
+                        <TextBlock Text="Default Graph Type"/>
+                        <ComboBox SelectedIndex="{Binding SelectedDefaultGraphIndex}" Width="200" HorizontalAlignment="Left">
+                            <ComboBoxItem>Pie Chart</ComboBoxItem>
+                            <ComboBoxItem>Bar Graph</ComboBoxItem>
+                            <ComboBoxItem>Treemap</ComboBoxItem>
+                        </ComboBox>
+                    </StackPanel>
+                    
+                    <Grid ColumnDefinitions="*,*,*" Margin="0,8,0,0">
+                        <StackPanel Grid.Column="0" Spacing="6" Margin="0,0,8,0">
+                            <TextBlock Text="Max Pie Slices"/>
+                            <NumericUpDown Value="{Binding MaxPieSlices}" Minimum="5" Maximum="25" Increment="1" FormatString="0"/>
+                        </StackPanel>
+                        
+                        <StackPanel Grid.Column="1" Spacing="6" Margin="8,0,8,0">
+                            <TextBlock Text="Max Bar Items"/>
+                            <NumericUpDown Value="{Binding MaxBarItems}" Minimum="5" Maximum="50" Increment="5" FormatString="0"/>
+                        </StackPanel>
+                        
+                        <StackPanel Grid.Column="2" Spacing="6" Margin="8,0,0,0">
+                            <TextBlock Text="Max Top Files"/>
+                            <NumericUpDown Value="{Binding MaxTopFiles}" Minimum="25" Maximum="500" Increment="25" FormatString="0"/>
+                        </StackPanel>
+                    </Grid>
+                    
+                    <StackPanel Spacing="6" Margin="0,8,0,0">
+                        <TextBlock Text="Min Slice Percentage (smaller items grouped into 'Other')"/>
+                        <NumericUpDown Value="{Binding MinSlicePercentage}" Minimum="0.5" Maximum="10" Increment="0.5" FormatString="0.0"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Behavior Section -->
+            <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" 
+                    BorderThickness="0,0,0,1" Padding="0,0,0,16">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Behavior" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource SystemAccentColor}"/>
+                    
+                    <StackPanel Spacing="10" Margin="0,4,0,0">
+                        <CheckBox IsChecked="{Binding RememberLastPath}" Content="Remember last scanned path"/>
+                        <CheckBox IsChecked="{Binding ConfirmBeforeDelete}" Content="Confirm before deleting files"/>
+                        <CheckBox IsChecked="{Binding ShowHiddenFiles}" Content="Include hidden files in scan"/>
+                        <CheckBox IsChecked="{Binding ShowSystemFiles}" Content="Include system files in scan"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Privacy & Updates Section -->
+            <Border Padding="0,0,0,16">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Privacy &amp; Updates" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource SystemAccentColor}"/>
+                    
+                    <StackPanel Spacing="10" Margin="0,4,0,0">
+                        <CheckBox IsChecked="{Binding CheckForUpdates}" Content="Check for updates on startup"/>
+                        <CheckBox IsChecked="{Binding SendUsageData}" Content="Send anonymous usage statistics"/>
+                        <TextBlock TextWrapping="Wrap" Margin="24,2,0,0" FontSize="11" Foreground="{DynamicResource SecondaryTextForeground}">
+                            <Run Text="Seekr is in early development. Anonymous usage data (scan sizes, feature usage) helps prioritize improvements. "/><LineBreak/>
+                            <Run Text="No personal information, file names, or paths are ever collected. You can disable this anytime."/>
+                        </TextBlock>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Right" Margin="0,8,0,0">
+                <Button Content="Save" Command="{Binding SaveCommand}" IsDefault="True" Width="80"/>
+                <Button Content="Cancel" Command="{Binding CancelCommand}" IsCancel="True" Width="80"/>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</Window>

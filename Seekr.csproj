@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <ApplicationIcon>Seekr.ico</ApplicationIcon>
+    
+    <!-- Assembly Information -->
+    <Version>1.0.0</Version>
+    <FileVersion>1.0.0.0</FileVersion>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <Authors>CQNNQR</Authors>
+    <Company>CQNNQR</Company>
+    <Product>Seekr Disk Usage Analyzer</Product>
+    <Copyright>Copyright © 2025 CQNNQR</Copyright>
+    <Description>A lightning-fast disk usage analyzer for Windows.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Seekr.ico" />
+    <EmbeddedResource Include="THIRD-PARTY-NOTICES.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Seekr.Core\**" />
+    <EmbeddedResource Remove="Seekr.Core\**" />
+    <None Remove="Seekr.Core\**" />
+    <Compile Remove="Seekr.Avalonia\**" />
+    <EmbeddedResource Remove="Seekr.Avalonia\**" />
+    <None Remove="Seekr.Avalonia\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Serilog structured logging + sinks -->
+    <PackageReference Include="Serilog" Version="4.3.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+    <PackageReference Include="Serilog.Sinks.Seq" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="Seekr.Core\Seekr.Core.csproj" />
+  </ItemGroup>
+
+</Project>

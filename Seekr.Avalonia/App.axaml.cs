@@ -1,0 +1,58 @@
+using System;
+using Avalonia;
+using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Markup.Xaml;
+using Avalonia.Styling;
+using Seekr.Services;
+using Serilog;
+
+namespace Seekr.Avalonia;
+
+public partial class App : Application
+{
+    public override void Initialize()
+    {
+        AvaloniaXamlLoader.Load(this);
+        
+        // Load settings and apply saved theme
+        try
+        {
+            SettingsService.Load();
+            var theme = SettingsService.Settings?.Theme;
+            if (theme == "Dark")
+            {
+                RequestedThemeVariant = ThemeVariant.Dark;
+            }
+            else if (theme == "Light")
+            {
+                RequestedThemeVariant = ThemeVariant.Light;
+            }
+            // else: use system default
+            
+            Log.Information("Applied theme from settings: {Theme}", theme ?? "System Default");
+            
+            // Initialize telemetry based on settings
+            TelemetryService.IsEnabled = SettingsService.Settings?.SendAnonymousUsageData ?? true;
+            
+            // Track app launch (fire and forget)
+            if (TelemetryService.IsEnabled)
+            {
+                _ = TelemetryService.TrackAppLaunchAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to load settings on startup");
+        }
+    }
+
+    public override void OnFrameworkInitializationCompleted()
+    {
+        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            desktop.MainWindow = new MainWindow();
+        }
+
+        base.OnFrameworkInitializationCompleted();
+    }
+}

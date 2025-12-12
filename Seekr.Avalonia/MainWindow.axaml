@@ -1,0 +1,301 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:Seekr.Avalonia.ViewModels"
+        xmlns:models="using:Seekr.Models"
+        xmlns:lvc="using:LiveChartsCore.SkiaSharpView.Avalonia"
+        xmlns:converters="using:Seekr.Avalonia.Converters"
+        xmlns:controls="using:Seekr.Avalonia.Controls"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="Seekr.Avalonia.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/seekr-icon.ico"
+        Title="Seekr v1.0.0 - Disk Usage Analyzer">
+
+    <Window.Resources>
+        <converters:SizeConverter x:Key="SizeConverter"/>
+    </Window.Resources>
+
+    <Design.DataContext>
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+        <!-- Toolbar -->
+        <Border Grid.Row="0" Background="{DynamicResource ToolbarBackground}" Padding="10">
+            <Grid RowDefinitions="Auto,Auto">
+                <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto,Auto,Auto">
+                    <Button Grid.Column="0" Name="SelectFolderButton" Content="📂 Select Folders" Click="SelectFolderButton_Click" Margin="0,0,10,0" Background="{DynamicResource ButtonBackground}" Foreground="{DynamicResource ButtonForeground}" ToolTip.Tip="Select one or more folders/drives to scan"/>
+                    <TextBox Grid.Column="1" Text="{Binding ScanPathsDisplay}" IsReadOnly="True" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                    <Button Grid.Column="2" Content="▶ Scan" Command="{Binding ScanCommand}" Margin="0,0,10,0" Background="#007ACC" Foreground="White" FontWeight="Bold"/>
+                    <Button Grid.Column="3" Content="⏹ Cancel" Command="{Binding CancelCommand}" IsEnabled="{Binding IsScanning}" Margin="0,0,10,0" Background="#CA5100" Foreground="White"/>
+                    <Button Grid.Column="4" Content="Export" Command="{Binding ExportCommand}" IsEnabled="{Binding HasResults}" Margin="0,0,10,0" Background="{DynamicResource ButtonBackground}" Foreground="{DynamicResource ButtonForeground}"/>
+                    <Button Grid.Column="5" Content="⚙ Settings" Command="{Binding OpenSettingsCommand}" Margin="0,0,10,0" Background="{DynamicResource ButtonBackground}" Foreground="{DynamicResource ButtonForeground}"/>
+                    <Button Grid.Column="6" Content="🔄" Command="{Binding CheckForUpdatesCommand}" Margin="0,0,10,0" Background="{DynamicResource ButtonBackground}" Foreground="{DynamicResource ButtonForeground}" ToolTip.Tip="Check for updates"/>
+                    <TextBox Grid.Column="7" Text="{Binding SearchText}" Watermark="Search..." Width="200" VerticalAlignment="Center"/>
+                </Grid>
+                <!-- Show selected paths when multiple folders are selected -->
+                <ItemsControl Grid.Row="1" ItemsSource="{Binding ScanPaths}" IsVisible="{Binding HasMultiplePaths}" Margin="0,5,0,0">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Background="#444" CornerRadius="3" Padding="5,2" Margin="0,0,5,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding}" Foreground="White" FontSize="11"/>
+                                    <Button Content="✕" FontSize="9" Padding="3,0" Margin="5,0,0,0" Background="Transparent" Foreground="#AAA" Click="RemoveScanPath_Click" Tag="{Binding}"/>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Grid>
+        </Border>
+        
+        <!-- Update Banner -->
+        <Border Grid.Row="1" Background="#2D7D2D" Padding="8,5" IsVisible="{Binding IsUpdateAvailable}">
+            <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto">
+                <TextBlock Grid.Column="0" Text="🎉" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <TextBlock Grid.Column="1" Text="{Binding UpdateStatus}" Foreground="White" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                <ProgressBar Grid.Column="2" Value="{Binding UpdateDownloadProgress}" Maximum="100" Width="150" Height="8" 
+                             IsVisible="{Binding IsDownloadingUpdate}" Margin="10,0" Background="#1A5A1A" Foreground="White"/>
+                <Button Grid.Column="3" Content="⬇ Install Update" Command="{Binding InstallUpdateCommand}" 
+                        Margin="10,0,5,0" Background="#1A5A1A" Foreground="White" Padding="10,3"
+                        IsVisible="{Binding !IsDownloadingUpdate}"/>
+                <Button Grid.Column="4" Content="✕" Command="{Binding DismissUpdateCommand}" 
+                        Background="Transparent" Foreground="White" Padding="5,0"
+                        IsVisible="{Binding !IsDownloadingUpdate}"/>
+            </Grid>
+        </Border>
+
+        <!-- Main Content -->
+        <Grid Grid.Row="2">
+            <Grid ColumnDefinitions="300, *" IsVisible="{Binding !IsSearchActive}">
+                <!-- Tree View Sidebar -->
+                <Border Grid.Column="0" Background="{DynamicResource SidebarBackground}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
+                    <TreeView ItemsSource="{Binding Nodes}" SelectedItem="{Binding SelectedNode}" Background="Transparent" Foreground="{DynamicResource TextForeground}">
+                        <TreeView.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Open" Command="{Binding $parent[Window].DataContext.OpenCommand}" CommandParameter="{Binding SelectedItem, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=TreeView}}"/>
+                                <MenuItem Header="Reveal in File Manager" Command="{Binding $parent[Window].DataContext.RevealCommand}" CommandParameter="{Binding SelectedItem, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=TreeView}}"/>
+                                <MenuItem Header="Copy Path" Command="{Binding $parent[Window].DataContext.CopyPathCommand}" CommandParameter="{Binding SelectedItem, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=TreeView}}"/>
+                                <Separator/>
+                                <MenuItem Header="Delete" Command="{Binding $parent[Window].DataContext.DeleteCommand}" CommandParameter="{Binding SelectedItem, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=TreeView}}"/>
+                                <Separator/>
+                                <MenuItem Header="Export to CSV" Command="{Binding $parent[Window].DataContext.ExportNodeCommand}" CommandParameter="{Binding SelectedItem, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=TreeView}}"/>
+                            </ContextMenu>
+                        </TreeView.ContextMenu>
+                        <TreeView.ItemTemplate>
+                            <TreeDataTemplate DataType="models:FileSystemNode" ItemsSource="{Binding Children}">
+                                <StackPanel Orientation="Horizontal" Spacing="5">
+                                    <TextBlock Text="📁" Foreground="#DCB67A" IsVisible="{Binding IsDirectory}"/>
+                                    <TextBlock Text="📄" Foreground="#AAAAAA" IsVisible="{Binding !IsDirectory}"/>
+                                    <TextBlock Text="{Binding Name}" Foreground="{DynamicResource TextForeground}"/>
+                                    <TextBlock Text="{Binding TotalSize, Converter={StaticResource SizeConverter}}" Foreground="{DynamicResource SecondaryTextForeground}" FontSize="10" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </TreeDataTemplate>
+                        </TreeView.ItemTemplate>
+                    </TreeView>
+                </Border>
+                
+                <!-- Charts Area -->
+                <TabControl Grid.Column="1" Margin="10" x:Name="ChartTabControl" 
+                            SelectedIndex="{Binding SelectedTabIndex}">
+                    <TabItem Header="Pie Chart" FontSize="14" x:Name="PieChartTab">
+                        <Grid RowDefinitions="Auto,*">
+                            <Button Grid.Row="0" Content="← Back" Command="{Binding $parent[Window].DataContext.NavigateUpCommand}" 
+                                    Padding="8,3" FontSize="11" Background="#007ACC" Foreground="White" 
+                                    CornerRadius="3" HorizontalAlignment="Left" Margin="0,0,0,5"/>
+                            <Grid Grid.Row="1">
+                                <lvc:PieChart x:Name="PieChartControl" Series="{Binding PieSeries}" 
+                                              LegendPosition="Right" 
+                                              TooltipPosition="Hidden"/>
+                                <!-- Custom HUD tooltip for pie chart -->
+                                <Border x:Name="PieChartHud" 
+                                        Background="#DD333333" 
+                                        CornerRadius="6" 
+                                        Padding="12,8" 
+                                        HorizontalAlignment="Left" 
+                                        VerticalAlignment="Bottom"
+                                        Margin="10"
+                                        IsVisible="False"
+                                        IsHitTestVisible="False">
+                                    <TextBlock x:Name="PieChartHudText" Foreground="White" FontSize="13"/>
+                                </Border>
+                            </Grid>
+                        </Grid>
+                    </TabItem>
+                    <TabItem Header="Bar Graph" FontSize="14" x:Name="BarGraphTab">
+                        <Grid RowDefinitions="Auto,*">
+                            <Button Grid.Row="0" Content="← Back" Command="{Binding $parent[Window].DataContext.NavigateUpCommand}" 
+                                    Padding="8,3" FontSize="11" Background="#007ACC" Foreground="White" 
+                                    CornerRadius="3" HorizontalAlignment="Left" Margin="0,0,0,5"/>
+                            <lvc:CartesianChart x:Name="BarChartControl" Grid.Row="1" Series="{Binding BarSeries}" XAxes="{Binding BarXAxes}" YAxes="{Binding BarYAxes}" TooltipPosition="Top" ZoomMode="Both"/>
+                        </Grid>
+                    </TabItem>
+                    <TabItem Header="Treemap" FontSize="14" x:Name="TreemapTab">
+                        <controls:TreemapControl Root="{Binding SelectedNode, Mode=TwoWay}"/>
+                    </TabItem>
+                    <TabItem Header="Top 100 List" FontSize="14">
+                        <DataGrid ItemsSource="{Binding TopFiles}" AutoGenerateColumns="False" IsReadOnly="True" GridLinesVisibility="All" BorderThickness="1" BorderBrush="{DynamicResource BorderBrush}">
+                            <DataGrid.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Open" Command="{Binding $parent[Window].DataContext.OpenCommand}" CommandParameter="{Binding SelectedItem, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=DataGrid}}"/>
+                                    <MenuItem Header="Reveal in File Manager" Command="{Binding $parent[Window].DataContext.RevealCommand}" CommandParameter="{Binding SelectedItem, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=DataGrid}}"/>
+                                    <MenuItem Header="Copy Path" Command="{Binding $parent[Window].DataContext.CopyPathCommand}" CommandParameter="{Binding SelectedItem, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=DataGrid}}"/>
+                                    <Separator/>
+                                    <MenuItem Header="Delete" Command="{Binding $parent[Window].DataContext.DeleteCommand}" CommandParameter="{Binding SelectedItem, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=DataGrid}}"/>
+                                    <Separator/>
+                                    <MenuItem Header="Export to CSV" Command="{Binding $parent[Window].DataContext.ExportNodeCommand}" CommandParameter="{Binding SelectedItem, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=DataGrid}}"/>
+                                </ContextMenu>
+                            </DataGrid.ContextMenu>
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="200"/>
+                                <DataGridTextColumn Header="Size" Binding="{Binding TotalSize, Converter={StaticResource SizeConverter}}" Width="100"/>
+                                <DataGridTextColumn Header="Path" Binding="{Binding FullPath}" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </TabItem>
+                    <TabItem Header="File Types" FontSize="14">
+                        <Grid RowDefinitions="*,Auto">
+                            <DataGrid Grid.Row="0" ItemsSource="{Binding FileTypeAnalysis}" AutoGenerateColumns="False" IsReadOnly="True" GridLinesVisibility="All" BorderThickness="1" BorderBrush="{DynamicResource BorderBrush}">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Extension" Binding="{Binding Extension}" Width="100"/>
+                                    <DataGridTextColumn Header="Count" Binding="{Binding Count}" Width="80"/>
+                                    <DataGridTextColumn Header="Total Size" Binding="{Binding FormattedSize}" Width="100"/>
+                                    <DataGridTextColumn Header="% of Total" Binding="{Binding PercentageFormatted}" Width="80"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <TextBlock Grid.Row="1" Text="Double-click a row to filter the tree view by that file type" 
+                                       Foreground="{DynamicResource SecondaryTextForeground}" 
+                                       FontSize="11" Margin="5" HorizontalAlignment="Center"/>
+                        </Grid>
+                    </TabItem>
+                    <TabItem Header="Duplicates" FontSize="14">
+                        <Grid RowDefinitions="Auto,Auto,Auto,*">
+                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,5">
+                                <Button Content="🔍 Find Duplicates" Command="{Binding FindDuplicatesCommand}" 
+                                        Background="#007ACC" Foreground="White" Padding="10,5" Margin="0,0,5,0"/>
+                                <Button Content="✓ Verify" Command="{Binding VerifyDuplicatesCommand}" 
+                                        Background="#28A745" Foreground="White" Padding="10,5" Margin="0,0,5,0"
+                                        IsVisible="{Binding NeedsVerification}"
+                                        ToolTip.Tip="Hash files to confirm they are true duplicates (may take a while on HDD)"/>
+                                <Button Content="⏹ Cancel" Command="{Binding CancelDuplicateScanCommand}" 
+                                        Background="#CA5100" Foreground="White" Padding="10,5" Margin="0,0,15,0"
+                                        IsVisible="{Binding IsDuplicateScanning}"/>
+                                <TextBlock Text="Delete:" VerticalAlignment="Center" Margin="0,0,5,0" Foreground="{DynamicResource TextForeground}"/>
+                                <ComboBox x:Name="DuplicateKeepStrategy" SelectedIndex="0" Width="150" Margin="0,0,5,0">
+                                    <ComboBoxItem Content="Keep Newest"/>
+                                    <ComboBoxItem Content="Keep Oldest"/>
+                                    <ComboBoxItem Content="Keep Most Recent Access"/>
+                                    <ComboBoxItem Content="Keep Shortest Path"/>
+                                    <ComboBoxItem Content="Keep Longest Path"/>
+                                </ComboBox>
+                                <Button Content="🗑 Selected" Click="DeleteSelectedDuplicates_Click" 
+                                        Background="#CA5100" Foreground="White" Padding="10,5" Margin="0,0,5,0"
+                                        ToolTip.Tip="Delete duplicates from selected groups, keeping one file based on strategy"/>
+                                <Button Content="🗑 All" Click="DeleteAllDuplicates_Click" 
+                                        Background="#8B0000" Foreground="White" Padding="10,5"
+                                        ToolTip.Tip="Delete ALL duplicates using the selected strategy"/>
+                            </StackPanel>
+                            <!-- HDD Warning Banner -->
+                            <Border Grid.Row="1" Background="#4CAF50" Padding="10,5" CornerRadius="3" Margin="0,0,0,5"
+                                    IsVisible="{Binding NeedsVerification}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="⚡ HDD Instant Mode: " FontWeight="Bold" Foreground="White"/>
+                                    <TextBlock Text="Found duplicates using metadata fingerprint (same name + size + timestamps) with zero disk reads! Click 'Verify' to confirm with content sampling." Foreground="White" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+                            <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,10">
+                                <TextBlock Text="{Binding DuplicatesStatus}" Foreground="{DynamicResource SecondaryTextForeground}" FontSize="12"/>
+                                <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsDuplicateScanning}" Width="100" Height="8" Margin="10,0,0,0" Background="#333" Foreground="#007ACC"/>
+                            </StackPanel>
+                            <DataGrid Grid.Row="3" x:Name="DuplicatesDataGrid" ItemsSource="{Binding DuplicateGroups}" AutoGenerateColumns="False" IsReadOnly="True" GridLinesVisibility="All" BorderThickness="1" BorderBrush="{DynamicResource BorderBrush}" DoubleTapped="DuplicatesDataGrid_DoubleTapped" SelectionMode="Extended">
+                                <DataGrid.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Reveal First File in File Manager" Click="RevealDuplicateFile_Click"/>
+                                        <MenuItem Header="Show All Locations" Click="ShowDuplicateLocations_Click"/>
+                                        <Separator/>
+                                        <MenuItem Header="Delete Duplicates (Keep Newest)" Click="DeleteDuplicateGroup_KeepNewest_Click"/>
+                                        <MenuItem Header="Delete Duplicates (Keep Oldest)" Click="DeleteDuplicateGroup_KeepOldest_Click"/>
+                                        <MenuItem Header="Delete Duplicates (Keep Most Recent)" Click="DeleteDuplicateGroup_KeepMostRecent_Click"/>
+                                    </ContextMenu>
+                                </DataGrid.ContextMenu>
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="✓" Binding="{Binding StatusIcon}" Width="35"/>
+                                    <DataGridTextColumn Header="Size" Binding="{Binding FormattedSize}" Width="100"/>
+                                    <DataGridTextColumn Header="Count" Binding="{Binding Count}" Width="60"/>
+                                    <DataGridTextColumn Header="Wasted Space" Binding="{Binding WastedSpaceFormatted}" Width="100"/>
+                                    <DataGridTextColumn Header="Files" Binding="{Binding FileNames}" Width="*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Grid>
+                    </TabItem>
+                </TabControl>
+            </Grid>
+
+            <!-- Search Results Overlay -->
+            <Border Background="{DynamicResource ContentBackground}" IsVisible="{Binding IsSearchActive}" Padding="20">
+                <Grid RowDefinitions="Auto,*">
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+                        <Button Content="✕ Close Search" Command="{Binding ClearSearchCommand}" 
+                                Background="#CA5100" Foreground="White" Padding="10,5" Margin="0,0,10,0"/>
+                        <TextBlock Text="{Binding SearchResultsStatus}" VerticalAlignment="Center" 
+                                   Foreground="{DynamicResource SecondaryTextForeground}" FontSize="12"/>
+                    </StackPanel>
+                    <ListBox Grid.Row="1" x:Name="SearchResultsListBox" ItemsSource="{Binding SearchResults}" Background="Transparent" DoubleTapped="SearchResultsListBox_DoubleTapped">
+                        <ListBox.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Open" Command="{Binding $parent[Window].DataContext.OpenCommand}" CommandParameter="{Binding SelectedItem, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=ListBox}}"/>
+                                <MenuItem Header="Go To Location" Click="SearchResultGoToLocation_Click"/>
+                                <MenuItem Header="Reveal in File Manager" Command="{Binding $parent[Window].DataContext.RevealCommand}" CommandParameter="{Binding SelectedItem, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=ListBox}}"/>
+                                <MenuItem Header="Copy Path" Command="{Binding $parent[Window].DataContext.CopyPathCommand}" CommandParameter="{Binding SelectedItem, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=ListBox}}"/>
+                                <Separator/>
+                                <MenuItem Header="Delete" Command="{Binding $parent[Window].DataContext.DeleteCommand}" CommandParameter="{Binding SelectedItem, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=ListBox}}"/>
+                            </ContextMenu>
+                        </ListBox.ContextMenu>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1" Padding="5">
+                                    <Grid ColumnDefinitions="Auto, *, Auto">
+                                        <TextBlock Grid.Column="0" Text="📁" Foreground="#DCB67A" Margin="0,0,10,0" IsVisible="{Binding IsDirectory}"/>
+                                        <TextBlock Grid.Column="0" Text="📄" Foreground="#AAAAAA" Margin="0,0,10,0" IsVisible="{Binding !IsDirectory}"/>
+                                        <StackPanel Grid.Column="1">
+                                            <TextBlock Text="{Binding Name}" FontWeight="Bold" Foreground="#569CD6"/>
+                                            <TextBlock Text="{Binding FullPath}" Foreground="{DynamicResource SecondaryTextForeground}" FontStyle="Italic" FontSize="11"/>
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="2" Text="{Binding TotalSize, Converter={StaticResource SizeConverter}}" Foreground="{DynamicResource TextForeground}" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Status Bar -->
+        <Border Grid.Row="3" Background="#007ACC" Padding="5">
+            <Grid ColumnDefinitions="*,Auto,Auto">
+                <TextBlock Grid.Column="0" Text="{Binding StatusMessage}" Foreground="White" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                <TextBlock Grid.Column="1" Text="v1.0.0 © 2025 CQNNQR" Foreground="#AACCFF" VerticalAlignment="Center" FontSize="11" Margin="10,0"/>
+                <ProgressBar Grid.Column="2" IsIndeterminate="True" IsVisible="{Binding IsScanning}" Width="150" Height="10" Background="#005A9E" Foreground="White"/>
+            </Grid>
+        </Border>
+        
+        <!-- Telemetry Notice (subtle, fades after 3 seconds) -->
+        <Border Grid.Row="3" x:Name="TelemetryNotice" Background="#333" CornerRadius="5" Padding="12,8" 
+                HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,-50,0,0"
+                IsVisible="False" Opacity="0.95">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="ℹ️" VerticalAlignment="Center"/>
+                <TextBlock Text="Anonymous usage data helps improve Seekr. You can opt out in Settings." 
+                           Foreground="White" VerticalAlignment="Center" FontSize="12"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

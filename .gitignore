@@ -1,0 +1,94 @@
+# Build outputs
+bin/
+obj/
+publish/
+out/
+
+# IDE files
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# NuGet
+*.nupkg
+packages/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Debug files
+*.pdb
+*.ilk
+*.meta
+*.obj
+*.iobj
+*.ipdb
+
+# Test results
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+
+# Logs (optional - remove this line if you want to include sample logs)
+logs/
+*.log
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Rider
+.idea/
+*.sln.iml
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# User-specific files
+*.rsuser
+*.sln.docstates
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Inspect project
+Inspect/bin/
+Inspect/obj/
+
+# Settings file (users will have their own)
+seekr-settings.json
+
+# Telemetry CSV (local testing)
+*.csv
+
+# Internal docs
+GITHUB_SETUP.md
+
+# Old WinForms project files (keep for reference but don't push prominently)
+runout.txt
+TODO.md
+
+# Avalonia designer cache
+.avalonia/
