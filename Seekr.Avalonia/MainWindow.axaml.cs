@@ -67,12 +67,12 @@ public partial class MainWindow : Window
         notice.IsVisible = true;
         notice.Opacity = 0.95;
         
-        // Wait 3 seconds then fade out
-        await Task.Delay(3000);
-        
-        // Fade out over 500ms
-        var fadeSteps = 10;
-        var stepDelay = 50;
+        // Wait then fade out
+        await Task.Delay(AppConfiguration.TelemetryNoticeDurationMs);
+
+        // Fade out animation
+        var fadeSteps = AppConfiguration.TelemetryFadeSteps;
+        var stepDelay = AppConfiguration.TelemetryFadeStepDelayMs;
         for (int i = fadeSteps; i >= 0; i--)
         {
             await Dispatcher.UIThread.InvokeAsync(() =>
@@ -417,7 +417,7 @@ public partial class MainWindow : Window
         _contextMenuTimer?.Stop();
         _contextMenuTimer = new DispatcherTimer
         {
-            Interval = TimeSpan.FromSeconds(10)
+            Interval = AppConfiguration.ContextMenuTimeout
         };
         _contextMenuTimer.Tick += (s, args) =>
         {

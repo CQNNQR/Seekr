@@ -108,7 +108,7 @@ public class MainWindowViewModel : ViewModelBase
 
         // Auto-search when text changes (optional, or keep it manual)
         this.WhenAnyValue(x => x.SearchText)
-            .Throttle(TimeSpan.FromMilliseconds(500))
+            .Throttle(AppConfiguration.SearchThrottle)
             .Select(_ => Unit.Default)
             .ObserveOn(RxApp.MainThreadScheduler)
             .InvokeCommand(SearchCommand);
@@ -135,7 +135,7 @@ public class MainWindowViewModel : ViewModelBase
         // Update charts when selection changes
         this.WhenAnyValue(x => x.SelectedNode)
             .Where(node => node != null)
-            .Throttle(TimeSpan.FromMilliseconds(200))
+            .Throttle(AppConfiguration.ChartSelectionThrottle)
             .ObserveOn(RxApp.MainThreadScheduler)
             .Subscribe(async node => 
             {
