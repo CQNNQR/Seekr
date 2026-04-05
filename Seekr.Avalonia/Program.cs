@@ -53,6 +53,9 @@ class Program
         services.AddTransient<ViewModels.MainWindowViewModel>();
         services.AddTransient<ViewModels.SettingsWindowViewModel>();
         services.AddTransient<ViewModels.DetailsWindowViewModel>();
+
+        // Register Windows
+        services.AddTransient<MainWindow>();
     }
 
     public static AppBuilder BuildAvaloniaApp()
