@@ -31,6 +31,9 @@
     <Compile Remove="Seekr.Avalonia\**" />
     <EmbeddedResource Remove="Seekr.Avalonia\**" />
     <None Remove="Seekr.Avalonia\**" />
+    <Compile Remove="Inspect\**" />
+    <EmbeddedResource Remove="Inspect\**" />
+    <None Remove="Inspect\**" />
   </ItemGroup>
 
   <ItemGroup>

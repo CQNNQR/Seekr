@@ -37,11 +37,6 @@ Seekr/
 - ✅ Responsive UI that doesn't lock up during scans
 - ✅ Path selection with FolderBrowserDialog
 
-### Next Phase Goals (Phase 2)
-- [ ] Treemap visualization implementation
-- [ ] File type analysis charts
-- [ ] Top files/directories lists
-- [ ] Export functionality
 
 ### Development Guidelines
 - Always maintain UI responsiveness with background threading
