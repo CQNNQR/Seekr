@@ -1,7 +1,7 @@
 using System;
 using System.Reactive;
 using ReactiveUI;
-using Seekr.Services;
+using Seekr.Core.Services.Abstractions;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Styling;
@@ -24,14 +24,16 @@ public class SettingsWindowViewModel : ViewModelBase
     private bool _checkForUpdates;
     private bool _sendUsageData;
 
-    public SettingsWindowViewModel()
+    private readonly ISettingsService _settingsService;
+
+    public SettingsWindowViewModel(ISettingsService settingsService)
     {
-        // Load current settings
-        SettingsService.Load();
-        var settings = SettingsService.Settings;
+        _settingsService = settingsService;
+        _settingsService.Load();
+        var settings = _settingsService.Settings;
 
         SelectedThemeIndex = settings.Theme == "Dark" ? 1 : 0;
-        
+
         SelectedUnitIndex = settings.SizeUnit switch
         {
             "Bytes" => 1,
@@ -53,7 +55,7 @@ public class SettingsWindowViewModel : ViewModelBase
         MaxBarItems = settings.MaxBarItems;
         MaxTopFiles = settings.MaxTopFiles;
         MinSlicePercentage = (decimal)settings.MinSlicePercentage;
-        
+
         RememberLastPath = settings.RememberLastPath;
         ConfirmBeforeDelete = settings.ConfirmBeforeDelete;
         ShowHiddenFiles = settings.ShowHiddenFiles;
@@ -151,9 +153,8 @@ public class SettingsWindowViewModel : ViewModelBase
 
     private void Save()
     {
-        var settings = SettingsService.Settings;
-        
-        // Appearance
+        var settings = _settingsService.Settings;
+
         settings.Theme = SelectedThemeIndex == 1 ? "Dark" : "Light";
         settings.SizeUnit = SelectedUnitIndex switch
         {
@@ -164,7 +165,6 @@ public class SettingsWindowViewModel : ViewModelBase
             _ => "Auto"
         };
 
-        // Default Graph
         settings.DefaultGraph = SelectedDefaultGraphIndex switch
         {
             1 => "Bar",
@@ -172,33 +172,28 @@ public class SettingsWindowViewModel : ViewModelBase
             _ => "Pie"
         };
 
-        // Chart Settings
         settings.MaxPieSlices = (int)MaxPieSlices;
         settings.MaxBarItems = (int)MaxBarItems;
         settings.MaxTopFiles = (int)MaxTopFiles;
         settings.MinSlicePercentage = (double)MinSlicePercentage;
 
-        // Behavior
         settings.RememberLastPath = RememberLastPath;
         settings.ConfirmBeforeDelete = ConfirmBeforeDelete;
         settings.ShowHiddenFiles = ShowHiddenFiles;
         settings.ShowSystemFiles = ShowSystemFiles;
-        
-        // Privacy & Updates
+
         settings.CheckForUpdatesOnStartup = CheckForUpdates;
         settings.SendAnonymousUsageData = SendUsageData;
-        
-        // Sync to ScanOptions
+
         settings.ScanOptions.ScanHiddenFiles = ShowHiddenFiles;
         settings.ScanOptions.ScanSystemFiles = ShowSystemFiles;
 
-        SettingsService.Save();
+        _settingsService.Save();
 
-        // Apply Theme
         if (global::Avalonia.Application.Current != null)
         {
-            global::Avalonia.Application.Current.RequestedThemeVariant = settings.Theme == "Dark" 
-                ? ThemeVariant.Dark 
+            global::Avalonia.Application.Current.RequestedThemeVariant = settings.Theme == "Dark"
+                ? ThemeVariant.Dark
                 : ThemeVariant.Light;
         }
 

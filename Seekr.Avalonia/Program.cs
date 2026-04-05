@@ -1,5 +1,8 @@
-﻿using Avalonia;
+using Avalonia;
 using Avalonia.ReactiveUI;
+using Microsoft.Extensions.DependencyInjection;
+using Seekr.Core.Services.Abstractions;
+using Seekr.Services;
 using Serilog;
 using System;
 
@@ -7,9 +10,8 @@ namespace Seekr.Avalonia;
 
 class Program
 {
-    // Initialization code. Don't use any Avalonia, third-party APIs or any
-    // SynchronizationContext-reliant code before AppMain is called: things aren't initialized
-    // yet and stuff might break.
+    public static IServiceProvider? Services { get; private set; }
+
     [STAThread]
     public static void Main(string[] args)
     {
@@ -20,6 +22,11 @@ class Program
 
         try
         {
+            // Set up dependency injection
+            var services = new ServiceCollection();
+            ConfigureServices(services);
+            Services = services.BuildServiceProvider();
+
             BuildAvaloniaApp()
                 .StartWithClassicDesktopLifetime(args);
         }
@@ -33,7 +40,21 @@ class Program
         }
     }
 
-    // Avalonia configuration, don't remove; also used by visual designer.
+    private static void ConfigureServices(IServiceCollection services)
+    {
+        // Register services
+        services.AddSingleton<IDiskScanner, DiskScanner>();
+        services.AddSingleton<IAnalysisService, AnalysisService>();
+        services.AddSingleton<ISettingsService, SettingsServiceImpl>();
+        services.AddSingleton<ITelemetryService, TelemetryServiceImpl>();
+        services.AddSingleton<IUpdateService, UpdateServiceImpl>();
+
+        // Register ViewModels
+        services.AddTransient<ViewModels.MainWindowViewModel>();
+        services.AddTransient<ViewModels.SettingsWindowViewModel>();
+        services.AddTransient<ViewModels.DetailsWindowViewModel>();
+    }
+
     public static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()

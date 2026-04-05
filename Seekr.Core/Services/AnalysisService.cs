@@ -1,4 +1,5 @@
 using Seekr.Models;
+using Seekr.Core.Services.Abstractions;
 using Serilog;
 
 namespace Seekr.Services;
@@ -6,7 +7,7 @@ namespace Seekr.Services;
 /// <summary>
 /// Service for analyzing scanned file system data and generating statistics
 /// </summary>
-public class AnalysisService
+public class AnalysisService : IAnalysisService
 {
     /// <summary>
     /// Analyzes file types and their distribution

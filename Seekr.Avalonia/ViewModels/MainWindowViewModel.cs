@@ -18,7 +18,7 @@ using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Painting;
 using ReactiveUI;
 using Seekr.Models;
-using Seekr.Services;
+using Seekr.Core.Services.Abstractions;
 using SkiaSharp;
 using Serilog;
 using LiveChartsCore.Defaults;
@@ -31,8 +31,11 @@ public class MainWindowViewModel : ViewModelBase
     private string _statusMessage = "Ready";
     private bool _isScanning;
     private ObservableCollection<FileSystemNode> _nodes = new();
-    private DiskScanner _scanner;
-    private readonly AnalysisService _analysisService;
+    private readonly IDiskScanner _scanner;
+    private readonly IAnalysisService _analysisService;
+    private readonly ISettingsService _settingsService;
+    private readonly ITelemetryService _telemetryService;
+    private readonly IUpdateService _updateService;
 
     // Chart Properties
     private ISeries[] _pieSeries = Array.Empty<ISeries>();
@@ -73,18 +76,26 @@ public class MainWindowViewModel : ViewModelBase
     private string _updateStatus = string.Empty;
     private bool _isDownloadingUpdate;
     private double _updateDownloadProgress;
-    private UpdateService.UpdateInfo? _pendingUpdate;
+    private UpdateInfo? _pendingUpdate;
 
-    public MainWindowViewModel()
+    public MainWindowViewModel(
+        IDiskScanner scanner,
+        IAnalysisService analysisService,
+        ISettingsService settingsService,
+        ITelemetryService telemetryService,
+        IUpdateService updateService)
     {
-        _scanner = new DiskScanner(SettingsService.Settings?.ScanOptions);
-        _analysisService = new AnalysisService();
-        
+        _scanner = scanner;
+        _analysisService = analysisService;
+        _settingsService = settingsService;
+        _telemetryService = telemetryService;
+        _updateService = updateService;
+
         // Load last path if "Remember Last Path" is enabled
-        if (SettingsService.Settings?.RememberLastPath == true && 
-            !string.IsNullOrEmpty(SettingsService.Settings.LastScanPath))
+        if (_settingsService.Settings?.RememberLastPath == true &&
+            !string.IsNullOrEmpty(_settingsService.Settings.LastScanPath))
         {
-            var paths = SettingsService.Settings.LastScanPath.Split(';', StringSplitOptions.RemoveEmptyEntries);
+            var paths = _settingsService.Settings.LastScanPath.Split(';', StringSplitOptions.RemoveEmptyEntries);
             foreach (var p in paths)
             {
                 if (!string.IsNullOrWhiteSpace(p))
@@ -143,7 +154,7 @@ public class MainWindowViewModel : ViewModelBase
             });
 
         // Apply default graph tab from settings
-        SelectedTabIndex = SettingsService.Settings?.DefaultGraph switch
+        SelectedTabIndex = _settingsService.Settings?.DefaultGraph switch
         {
             "Pie" => 0,
             "Bar" => 1,
@@ -159,7 +170,7 @@ public class MainWindowViewModel : ViewModelBase
         DismissUpdateCommand = ReactiveCommand.Create(() => IsUpdateAvailable = false);
         
         // Check for updates on startup if enabled
-        if (SettingsService.Settings?.CheckForUpdatesOnStartup == true)
+        if (_settingsService.Settings?.CheckForUpdatesOnStartup == true)
         {
             _ = CheckForUpdatesAsync();
         }
@@ -232,17 +243,21 @@ public class MainWindowViewModel : ViewModelBase
 
     private void OpenSettings()
     {
-        var settingsVm = new SettingsWindowViewModel();
+        var services = Program.Services as IServiceProvider;
+        var settingsService = services?.GetService(typeof(ISettingsService)) as ISettingsService
+            ?? throw new InvalidOperationException("Settings service not available");
+
+        var settingsVm = new SettingsWindowViewModel(settingsService);
+
         var settingsWindow = new SettingsWindow
         {
             DataContext = settingsVm
         };
 
-        settingsVm.RequestClose += async () => 
+        settingsVm.RequestClose += async () =>
         {
             settingsWindow.Close();
-            
-            // If settings were saved and we have a selected node, refresh charts with new theme/settings
+
             if (settingsVm.SettingsSaved && SelectedNode != null)
             {
                 await GenerateChartsAsync(SelectedNode);
@@ -262,14 +277,14 @@ public class MainWindowViewModel : ViewModelBase
             UpdateStatus = "Checking for updates...";
             Log.Information("Manually checking for updates...");
             
-            var updateInfo = await UpdateService.CheckForUpdatesAsync();
+            var updateInfo = await _updateService.CheckForUpdatesAsync();
             _pendingUpdate = updateInfo;
-            
+
             if (updateInfo.IsUpdateAvailable)
             {
                 UpdateVersion = updateInfo.LatestVersion;
-                var fileSize = updateInfo.FileSizeBytes > 0 
-                    ? $" ({UpdateService.FormatFileSize(updateInfo.FileSizeBytes)})" 
+                var fileSize = updateInfo.FileSizeBytes > 0
+                    ? $" ({_updateService.FormatFileSize(updateInfo.FileSizeBytes)})"
                     : "";
                 UpdateStatus = $"Version {updateInfo.LatestVersion} available{fileSize}";
                 IsUpdateAvailable = true;
@@ -306,7 +321,7 @@ public class MainWindowViewModel : ViewModelBase
         if (string.IsNullOrEmpty(_pendingUpdate.DownloadUrl))
         {
             // No direct download - open the releases page instead
-            UpdateService.OpenReleasesPage();
+            _updateService.OpenReleasesPage();
             UpdateStatus = "Opening download page...";
             return;
         }
@@ -316,13 +331,13 @@ public class MainWindowViewModel : ViewModelBase
             IsDownloadingUpdate = true;
             UpdateDownloadProgress = 0;
             
-            var progress = new Progress<UpdateService.DownloadProgress>(p =>
+            var progress = new Progress<DownloadProgress>(p =>
             {
                 UpdateDownloadProgress = p.PercentComplete;
                 UpdateStatus = p.Status;
             });
             
-            var success = await UpdateService.DownloadAndInstallUpdateAsync(_pendingUpdate, progress);
+            var success = await _updateService.DownloadAndInstallUpdateAsync(_pendingUpdate, progress);
             
             if (success)
             {
@@ -431,7 +446,7 @@ public class MainWindowViewModel : ViewModelBase
         
         try
         {
-            var confirmBeforeDelete = SettingsService.Settings?.ConfirmBeforeDelete ?? true;
+            var confirmBeforeDelete = _settingsService.Settings?.ConfirmBeforeDelete ?? true;
             
             if (confirmBeforeDelete)
             {
@@ -1039,8 +1054,7 @@ public class MainWindowViewModel : ViewModelBase
         DuplicateGroups.Clear();
         DuplicatesStatus = "Click 'Find Duplicates' to scan for duplicate files";
 
-        _scanner = new DiskScanner(SettingsService.Settings?.ScanOptions);
-        _scanner.CurrentDirectoryChanged += (s, e) => 
+        _scanner.CurrentDirectoryChanged += (s, e) =>
         {
              Dispatcher.UIThread.Post(() => StatusMessage = $"Scanning: {e}");
         };
@@ -1080,12 +1094,6 @@ public class MainWindowViewModel : ViewModelBase
                 foreach (var path in _scanPaths)
                 {
                     StatusMessage = $"Scanning: {path}";
-                    _scanner = new DiskScanner(SettingsService.Settings?.ScanOptions);
-                    _scanner.CurrentDirectoryChanged += (s, e) => 
-                    {
-                         Dispatcher.UIThread.Post(() => StatusMessage = $"Scanning: {e}");
-                    };
-                    
                     var result = await Task.Run(() => _scanner.ScanAsync(path));
                     
                     if (result.Root != null)
@@ -1119,14 +1127,14 @@ public class MainWindowViewModel : ViewModelBase
             // Track scan completion for telemetry
             if (SelectedNode != null)
             {
-                _ = TelemetryService.TrackScanCompletedAsync(SelectedNode.TotalSize, totalFileCount);
+                _ = _telemetryService.TrackScanCompletedAsync(SelectedNode.TotalSize, totalFileCount);
             }
             
             // Save the paths if "Remember Last Path" is enabled
-            if (SettingsService.Settings?.RememberLastPath == true)
+            if (_settingsService.Settings?.RememberLastPath == true)
             {
-                SettingsService.Settings.LastScanPath = string.Join(";", _scanPaths);
-                SettingsService.Save();
+                _settingsService.Settings.LastScanPath = string.Join(";", _scanPaths);
+                _settingsService.Save();
             }
         }
         catch (OperationCanceledException)
@@ -1163,7 +1171,7 @@ public class MainWindowViewModel : ViewModelBase
                 if (allItems.Any())
                 {
                     // Use settings for chart configuration
-                    var settings = SettingsService.Settings;
+                    var settings = _settingsService.Settings;
                     int maxSlicesFromSettings = settings?.MaxPieSlices ?? 10;
                     double minPercentForSlice = (settings?.MinSlicePercentage ?? 2.0) / 100.0;
                     
@@ -1271,13 +1279,13 @@ public class MainWindowViewModel : ViewModelBase
 
                 // 2. Top Items (Bar Chart - Horizontal)
                 // Use the SAME list as Pie Chart (allItems) to ensure consistency
-                var maxBarItems = SettingsService.Settings?.MaxBarItems ?? 15;
+                var maxBarItems = _settingsService.Settings?.MaxBarItems ?? 15;
                 var topItems = allItems.Take(maxBarItems).Reverse().ToList();
                 _currentBarItems = topItems;
                 
                 // Determine text color based on theme - check actual applied theme variant for reliability
                 bool isDarkMode;
-                var themeSetting = SettingsService.Settings?.Theme;
+                var themeSetting = _settingsService.Settings?.Theme;
                 if (themeSetting == "Dark")
                 {
                     isDarkMode = true;
@@ -1345,7 +1353,7 @@ public class MainWindowViewModel : ViewModelBase
                 };
 
                 // 3. Top Files List - use settings for max count
-                var maxTopFiles = SettingsService.Settings?.MaxTopFiles ?? 100;
+                var maxTopFiles = _settingsService.Settings?.MaxTopFiles ?? 100;
                 var topFilesList = _analysisService.GetTopFiles(root, maxTopFiles);
 
                 Dispatcher.UIThread.Post(() =>
@@ -1632,7 +1640,7 @@ public class MainWindowViewModel : ViewModelBase
             }
             
             // Track duplicate scan for telemetry
-            _ = TelemetryService.TrackDuplicateScanAsync(duplicates.Count, totalWasted);
+            _ = _telemetryService.TrackDuplicateScanAsync(duplicates.Count, totalWasted);
         }
         catch (OperationCanceledException)
         {

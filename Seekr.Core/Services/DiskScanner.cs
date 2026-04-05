@@ -1,4 +1,5 @@
 using Seekr.Models;
+using Seekr.Core.Services.Abstractions;
 using Serilog;
 using System.Collections.Concurrent;
 
@@ -7,7 +8,7 @@ namespace Seekr.Services;
 /// <summary>
 /// High-performance disk scanner with multithreading and progress reporting
 /// </summary>
-public class DiskScanner
+public class DiskScanner : IDiskScanner
 {
     private CancellationTokenSource? _cancellationTokenSource;
     private readonly ScanOptions _options;
