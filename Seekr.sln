@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Seekr.Core", "Seekr.Core\Se
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Seekr.Avalonia", "Seekr.Avalonia\Seekr.Avalonia.csproj", "{FB98A7D6-6EDD-4218-A368-C54898C4F185}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Seekr.Core.Tests", "Seekr.Core.Tests\Seekr.Core.Tests.csproj", "{7D849C8A-8E65-46E1-AD72-22539F07A3D5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -55,6 +57,18 @@ Global
 		{FB98A7D6-6EDD-4218-A368-C54898C4F185}.Release|x64.Build.0 = Release|Any CPU
 		{FB98A7D6-6EDD-4218-A368-C54898C4F185}.Release|x86.ActiveCfg = Release|Any CPU
 		{FB98A7D6-6EDD-4218-A368-C54898C4F185}.Release|x86.Build.0 = Release|Any CPU
+		{7D849C8A-8E65-46E1-AD72-22539F07A3D5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7D849C8A-8E65-46E1-AD72-22539F07A3D5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7D849C8A-8E65-46E1-AD72-22539F07A3D5}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{7D849C8A-8E65-46E1-AD72-22539F07A3D5}.Debug|x64.Build.0 = Debug|Any CPU
+		{7D849C8A-8E65-46E1-AD72-22539F07A3D5}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{7D849C8A-8E65-46E1-AD72-22539F07A3D5}.Debug|x86.Build.0 = Debug|Any CPU
+		{7D849C8A-8E65-46E1-AD72-22539F07A3D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7D849C8A-8E65-46E1-AD72-22539F07A3D5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7D849C8A-8E65-46E1-AD72-22539F07A3D5}.Release|x64.ActiveCfg = Release|Any CPU
+		{7D849C8A-8E65-46E1-AD72-22539F07A3D5}.Release|x64.Build.0 = Release|Any CPU
+		{7D849C8A-8E65-46E1-AD72-22539F07A3D5}.Release|x86.ActiveCfg = Release|Any CPU
+		{7D849C8A-8E65-46E1-AD72-22539F07A3D5}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
